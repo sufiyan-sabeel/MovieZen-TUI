@@ -37,11 +37,13 @@ fn outer_terminal_supports_graphics() -> bool {
 }
 
 pub fn should_query_images() -> bool {
-    if std::env::var("MOVIEBOX_NO_IMAGE").is_ok_and(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+    if crate::config::env_var(&["MOVIEZEN_NO_IMAGE", "MOVIEBOX_NO_IMAGE"])
+        .is_some_and(|v| v == "1" || v.eq_ignore_ascii_case("true"))
     {
         return false;
     }
-    if let Ok(forced) = std::env::var("MOVIEBOX_IMAGE_PROTOCOL") {
+    if let Some(forced) = crate::config::env_var(&["MOVIEZEN_IMAGE_PROTOCOL", "MOVIEBOX_IMAGE_PROTOCOL"])
+    {
         let forced = forced.trim();
         if forced.eq_ignore_ascii_case("none")
             || forced.eq_ignore_ascii_case("off")
@@ -54,7 +56,7 @@ pub fn should_query_images() -> bool {
         }
     }
     if is_inside_tmux()
-        && std::env::var("MOVIEBOX_IMAGE_PROTOCOL").is_err()
+        && crate::config::env_var(&["MOVIEZEN_IMAGE_PROTOCOL", "MOVIEBOX_IMAGE_PROTOCOL"]).is_none()
         && !outer_terminal_supports_graphics()
     {
         return false;

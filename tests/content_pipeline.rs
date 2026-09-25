@@ -1,4 +1,4 @@
-use moviebox_tui::{
+use moviezen_tui::{
     models::SearchResult,
     providers::models::{
         CatalogItem, Episode, MediaDetails, MediaType, ProviderKind, ProviderMediaId,
@@ -156,7 +156,7 @@ async fn test_stale_details_response_protection() {
 
 #[test]
 fn test_cache_key_isolation_across_providers_queries_and_dimensions() {
-    use moviebox_tui::cache::{
+    use moviezen_tui::cache::{
         get_provider_details_path, get_provider_search_path, get_provider_stream_path,
     };
 
@@ -448,7 +448,7 @@ async fn test_series_details_resumes_watch_history() {
     app.state_mut()
         .history
         .recent
-        .push(moviebox_tui::history::WatchHistoryItem {
+        .push(moviezen_tui::history::WatchHistoryItem {
             provider: "moviebox".to_string(),
             subject_id: "bb_series".to_string(),
             title: "Breaking Bad".to_string(),

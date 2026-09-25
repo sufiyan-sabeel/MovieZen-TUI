@@ -1,4 +1,4 @@
-use moviebox_tui::history::WatchHistoryItem;
+use moviezen_tui::history::WatchHistoryItem;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
 

@@ -1,5 +1,5 @@
-use moviebox_tui::providers::ReleaseProvider;
-use moviebox_tui::providers::moviebox::client::MovieBoxClient;
+use moviezen_tui::providers::ReleaseProvider;
+use moviezen_tui::providers::moviebox::client::MovieBoxClient;
 
 #[tokio::test]
 #[ignore = "live network test; run with cargo test --test live_stream_verification -- --ignored"]
@@ -50,12 +50,12 @@ async fn test_live_series_resolutions_and_streams() {
         .await
         .expect("search series");
     let catalog =
-        moviebox_tui::providers::moviebox::adapt::moviebox_search_json_to_catalog(&search_res);
+        moviezen_tui::providers::moviebox::adapt::moviebox_search_json_to_catalog(&search_res);
     assert!(!catalog.is_empty(), "search should return catalog items");
 
     let series = catalog
         .iter()
-        .find(|item| item.media_type == moviebox_tui::providers::models::MediaType::Series)
+        .find(|item| item.media_type == moviezen_tui::providers::models::MediaType::Series)
         .unwrap_or(&catalog[0]);
 
     println!(
@@ -183,8 +183,8 @@ async fn test_inspect_live_mpd_manifest() {
         ("720p", "bestvideo[height<=720]+bestaudio/best", "1280x720"),
         ("480p", "bestvideo[height<=480]+bestaudio/best", "854x480"),
     ] {
-        let mut cmd = moviebox_tui::player::command(
-            moviebox_tui::player::PlayerKind::Mpv,
+        let mut cmd = moviezen_tui::player::command(
+            moviezen_tui::player::PlayerKind::Mpv,
             &mirror.resolver_url,
             None,
             &mirror.headers,
@@ -236,8 +236,8 @@ async fn test_live_moviebox_mpv_end_to_end_playback() {
         mirror.resolver_url
     );
 
-    let mut cmd = moviebox_tui::player::command(
-        moviebox_tui::player::PlayerKind::Mpv,
+    let mut cmd = moviezen_tui::player::command(
+        moviezen_tui::player::PlayerKind::Mpv,
         &mirror.resolver_url,
         None,
         &mirror.headers,
@@ -279,8 +279,8 @@ async fn test_live_moviebox_iina_invocation() {
     let release = &releases[0];
     let mirror = &release.mirrors[0];
 
-    let cmd = moviebox_tui::player::command(
-        moviebox_tui::player::PlayerKind::Iina,
+    let cmd = moviezen_tui::player::command(
+        moviezen_tui::player::PlayerKind::Iina,
         &mirror.resolver_url,
         None,
         &mirror.headers,
@@ -308,12 +308,12 @@ async fn test_live_moviebox_dynamic_movie_mpv_playback() {
 
     let search_res = client.search("Avengers", 1).await.expect("search Avengers");
     let catalog =
-        moviebox_tui::providers::moviebox::adapt::moviebox_search_json_to_catalog(&search_res);
+        moviezen_tui::providers::moviebox::adapt::moviebox_search_json_to_catalog(&search_res);
     assert!(!catalog.is_empty(), "search should return results");
 
     let movie = catalog
         .iter()
-        .find(|item| item.media_type == moviebox_tui::providers::models::MediaType::Movie)
+        .find(|item| item.media_type == moviezen_tui::providers::models::MediaType::Movie)
         .unwrap_or(&catalog[0]);
 
     println!(
@@ -330,8 +330,8 @@ async fn test_live_moviebox_dynamic_movie_mpv_playback() {
     let mirror = &releases[0].mirrors[0];
     println!("Dynamic movie direct URL: {}", mirror.resolver_url);
 
-    let mut cmd = moviebox_tui::player::command(
-        moviebox_tui::player::PlayerKind::Mpv,
+    let mut cmd = moviezen_tui::player::command(
+        moviezen_tui::player::PlayerKind::Mpv,
         &mirror.resolver_url,
         None,
         &mirror.headers,
@@ -518,7 +518,7 @@ async fn test_live_moviebox_session_persistence_and_reuse() {
 #[tokio::test]
 #[ignore = "live network test; run with cargo test --test live_stream_verification -- --ignored"]
 async fn test_live_fourkhdhub_movie_resolution() {
-    let client = moviebox_tui::providers::fourkhdhub::FourKHdHubClient::new()
+    let client = moviezen_tui::providers::fourkhdhub::FourKHdHubClient::new()
         .expect("fourkhdhub client creation");
     let items = client.search("Inception").await.expect("search Inception");
     assert!(!items.is_empty(), "Inception search should return results");
@@ -535,7 +535,7 @@ async fn test_live_fourkhdhub_movie_resolution() {
         println!("Attempting resolve for: {}", release.filename);
         let start = std::time::Instant::now();
         match client
-            .resolve_release(release, moviebox_tui::providers::ResolutionIntent::Playback)
+            .resolve_release(release, moviezen_tui::providers::ResolutionIntent::Playback)
             .await
         {
             Ok(source) => {
@@ -559,7 +559,7 @@ async fn test_live_fourkhdhub_movie_resolution() {
 #[tokio::test]
 #[ignore = "live network test; run with cargo test --test live_stream_verification -- --ignored"]
 async fn test_live_fourkhdhub_game_of_thrones_resolution() {
-    let client = moviebox_tui::providers::fourkhdhub::FourKHdHubClient::new()
+    let client = moviezen_tui::providers::fourkhdhub::FourKHdHubClient::new()
         .expect("fourkhdhub client creation");
     let items = client
         .search("Game of Thrones")
@@ -586,7 +586,7 @@ async fn test_live_fourkhdhub_game_of_thrones_resolution() {
         );
         let start = std::time::Instant::now();
         match client
-            .resolve_release(release, moviebox_tui::providers::ResolutionIntent::Playback)
+            .resolve_release(release, moviezen_tui::providers::ResolutionIntent::Playback)
             .await
         {
             Ok(source) => {
@@ -610,7 +610,7 @@ async fn test_live_fourkhdhub_game_of_thrones_resolution() {
 #[tokio::test]
 #[ignore = "live network test; run with cargo test --test live_stream_verification -- --ignored"]
 async fn test_live_moviebox_captions_end_to_end() {
-    let service = moviebox_tui::service::MovieBoxService::new();
+    let service = moviezen_tui::service::MovieBoxService::new();
     service.client.init().await.expect("client init successful");
 
     let releases = service
@@ -657,7 +657,7 @@ async fn test_live_moviebox_captions_end_to_end() {
 #[tokio::test]
 #[ignore = "live network test; run with cargo test --test live_stream_verification -- --ignored"]
 async fn test_live_moviebox_breaking_bad_series_captions_latency() {
-    let service = moviebox_tui::service::MovieBoxService::new();
+    let service = moviezen_tui::service::MovieBoxService::new();
     service.client.init().await.expect("client init successful");
 
     let subject_id = "6207982430134357800";

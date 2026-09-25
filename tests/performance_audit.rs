@@ -1,7 +1,7 @@
-use moviebox_tui::cache::md5_hex;
-use moviebox_tui::providers::tv::parser::M3UParser;
-use moviebox_tui::tui::app::App;
-use moviebox_tui::tui::text::truncate_width;
+use moviezen_tui::cache::md5_hex;
+use moviezen_tui::providers::tv::parser::M3UParser;
+use moviezen_tui::tui::app::App;
+use moviezen_tui::tui::text::truncate_width;
 use ratatui::Terminal;
 use ratatui::backend::TestBackend;
 use std::time::Instant;
@@ -133,7 +133,7 @@ fn test_benchmark_performance_improvements_matrix() {
         let t = Instant::now();
         for i in 0..ITERATIONS {
             let title = sample_titles[i % sample_titles.len()];
-            let _ = moviebox_tui::providers::moviebox::clean_moviebox_title(title);
+            let _ = moviezen_tui::providers::moviebox::clean_moviebox_title(title);
         }
         clean_title_duration = clean_title_duration.min(t.elapsed());
     }

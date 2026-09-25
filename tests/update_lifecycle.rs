@@ -1,14 +1,14 @@
-use moviebox_tui::models::NotificationKind;
-use moviebox_tui::tui::action::Action;
-use moviebox_tui::tui::app::App;
-use moviebox_tui::tui::overlay::update_modal_layout;
-use moviebox_tui::updater::apply::{
+use moviezen_tui::models::NotificationKind;
+use moviezen_tui::tui::action::Action;
+use moviezen_tui::tui::app::App;
+use moviezen_tui::tui::overlay::update_modal_layout;
+use moviezen_tui::updater::apply::{
     InstallationEnvironment, SelfUpdateOutcome, apply_staged_binary, detect_environment,
     is_homebrew_managed, is_writable,
 };
-use moviebox_tui::updater::extract::extract_binary;
-use moviebox_tui::updater::verify::{compute_sha256, parse_sha256sums, verify_checksum};
-use moviebox_tui::updater::{Release, ReleaseAsset, TargetPlatform};
+use moviezen_tui::updater::extract::extract_binary;
+use moviezen_tui::updater::verify::{compute_sha256, parse_sha256sums, verify_checksum};
+use moviezen_tui::updater::{Release, ReleaseAsset, TargetPlatform};
 use ratatui::layout::Rect;
 use std::io::Write;
 
@@ -394,7 +394,7 @@ async fn test_update_editing_mode_input_isolation() {
     let mut app = App::new();
     app.state_mut().update_available =
         Some(("0.1.16".to_string(), "New release notes".to_string()));
-    app.state_mut().input_mode = moviebox_tui::tui::state::InputMode::Editing;
+    app.state_mut().input_mode = moviezen_tui::tui::state::InputMode::Editing;
 
     let u_key = crossterm::event::KeyEvent::new(
         crossterm::event::KeyCode::Char('u'),

@@ -361,8 +361,14 @@ impl App {
         let Some(path) = crate::config::tv_path() else {
             return;
         };
-        if path.exists() {
-            match std::fs::read_to_string(&path) {
+        let Some((source, migrate)) = crate::config::resolve_readable(
+            Some(path),
+            crate::config::legacy_tv_path(),
+        ) else {
+            return;
+        };
+        if source.exists() {
+            match std::fs::read_to_string(&source) {
                 Ok(content) => match serde_json::from_str::<Vec<String>>(&content) {
                     Ok(list) => {
                         let mut seen = std::collections::HashSet::new();
@@ -371,25 +377,31 @@ impl App {
                             .map(|item| item.trim().to_string())
                             .filter(|item| !item.is_empty() && seen.insert(item.clone()))
                             .collect();
+                        if migrate {
+                            log::info!(
+                                "migrating legacy MovieBox-Tui tv playlists to MovieZen-TUI paths"
+                            );
+                            self.save_tv_playlists();
+                        }
                     }
                     Err(e) => {
                         let stamp = std::time::SystemTime::now()
                             .duration_since(std::time::UNIX_EPOCH)
                             .unwrap_or_default()
                             .as_secs();
-                        let corrupt_path = path.with_extension(format!("corrupt.{stamp}"));
+                        let corrupt_path = source.with_extension(format!("corrupt.{stamp}"));
                         log::error!(
                             "failed to parse tv playlists from {} ({e}), rotating to {}",
-                            crate::logging::sanitize_path(&path),
+                            crate::logging::sanitize_path(&source),
                             crate::logging::sanitize_path(&corrupt_path)
                         );
-                        let _ = std::fs::rename(&path, corrupt_path);
+                        let _ = std::fs::rename(&source, corrupt_path);
                     }
                 },
                 Err(e) => {
                     log::warn!(
                         "failed to read tv playlists from {}: {e}",
-                        crate::logging::sanitize_path(&path)
+                        crate::logging::sanitize_path(&source)
                     );
                 }
             }

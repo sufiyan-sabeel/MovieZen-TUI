@@ -237,37 +237,45 @@ pub struct HistoryManager {
 
 impl HistoryManager {
     pub fn new() -> Self {
-        let mut history = if let Some(path) = Self::history_file_path() {
-            if path.exists() {
-                if let Ok(content) = fs::read_to_string(&path) {
-                    if let Ok(mut hist) = serde_json::from_str::<Self>(&content) {
-                        hist.hydrate_watched_index();
-                        hist
-                    } else {
-                        let stamp = std::time::SystemTime::now()
-                            .duration_since(std::time::UNIX_EPOCH)
-                            .unwrap_or_default()
-                            .as_secs();
-                        let corrupt_path = path.with_extension(format!("corrupt.{stamp}"));
-                        log::error!(
-                            "failed to parse watch history from {}, rotating to {}",
-                            crate::logging::sanitize_path(&path),
-                            crate::logging::sanitize_path(&corrupt_path)
-                        );
-                        let _ = fs::rename(&path, corrupt_path);
-                        Self::default()
+        let resolved = Self::history_file_path().and_then(|path| {
+            crate::config::resolve_readable(Some(path), crate::config::legacy_history_path())
+        });
+        let (mut history, migrate) = match resolved {
+            Some((source, migrate)) => {
+                let mut loaded = None;
+                if source.exists() {
+                    if let Ok(content) = fs::read_to_string(&source) {
+                        match serde_json::from_str::<Self>(&content) {
+                            Ok(mut hist) => {
+                                hist.hydrate_watched_index();
+                                loaded = Some(hist);
+                            }
+                            Err(_) => {
+                                let stamp = std::time::SystemTime::now()
+                                    .duration_since(std::time::UNIX_EPOCH)
+                                    .unwrap_or_default()
+                                    .as_secs();
+                                let corrupt_path = source.with_extension(format!("corrupt.{stamp}"));
+                                log::error!(
+                                    "failed to parse watch history from {}, rotating to {}",
+                                    crate::logging::sanitize_path(&source),
+                                    crate::logging::sanitize_path(&corrupt_path)
+                                );
+                                let _ = fs::rename(&source, corrupt_path);
+                            }
+                        }
                     }
-                } else {
-                    Self::default()
                 }
-            } else {
-                Self::default()
+                (loaded.unwrap_or_default(), migrate)
             }
-        } else {
-            Self::default()
+            None => (Self::default(), false),
         };
 
         history.reconcile_pending_playback_states();
+        if migrate {
+            log::info!("migrating legacy MovieBox-Tui watch history to MovieZen-TUI paths");
+            history.save();
+        }
         history
     }
 

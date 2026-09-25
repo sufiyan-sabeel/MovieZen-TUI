@@ -1,197 +1,49 @@
-<div align="center">
+# MovieZen-TUI
 
-# MovieBox-TUI
+**Terminal media experience** — a TUI for finding and playing movies, TV shows, anime, and live TV from your terminal, built for mobile-first use (Android / Termux) as well as desktop.
 
-**Terminal interface to find, download, and stream movies, TV shows, and live TV using local media players.**
+- **Binary:** `moviezen-tui`
+- **Creator:** Umaiz Sufiyan
+- **Repository:** <https://github.com/sufiyan-sabeel/MovieZen-TUI>
+- **License:** MIT OR Apache-2.0
+- **Status:** active development — rebranding and playback/image work in progress
 
-[ English ](README.md) • [ বাংলা ](README_BN.md) • [ हिन्दी ](README_HI.md) • [ Español ](README_ES.md)
+## Origin & attribution
 
-[![CI](https://img.shields.io/github/actions/workflow/status/mesamirh/MovieBox-Tui/ci.yml?branch=main&label=CI&logo=github&style=flat)](https://github.com/mesamirh/MovieBox-Tui/actions/workflows/ci.yml)
-[![crates.io](https://img.shields.io/crates/v/moviebox-tui.svg?logo=rust&style=flat)](https://crates.io/crates/moviebox-tui)
-[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg?style=flat)](#license)
-[![Telegram](https://img.shields.io/badge/Telegram-Channel-2CA5E0?style=flat&logo=telegram&logoColor=white)](https://t.me/getfromme)
-[![Support](https://img.shields.io/badge/Support-Crypto-F7931A?style=flat&logo=bitcoin&logoColor=white)](#optional-support)
-</div>
+MovieZen-TUI is a **fork** of [mesamirh/MovieBox-Tui](https://github.com/mesamirh/MovieBox-Tui)
+(v0.1.24, MIT OR Apache-2.0). Upstream copyright and license terms apply to the inherited
+code and are preserved in [`LICENSE-MIT`](LICENSE-MIT) and [`LICENSE-APACHE`](LICENSE-APACHE).
+Provider integrations such as the MovieBox provider remain named for the services they talk to.
 
-[moviebox-tui-walkthrough.webm](https://github.com/user-attachments/assets/7554a7e5-6ff5-49ec-9d87-f821ea99950e)
+## Build from source
 
-## Features
-
-- **On Demand Streaming**: Stream movies, TV series, anime, and Asian dramas across multiple native providers and community Stremio addons.
-- **Live TV & IPTV**: Import custom M3U playlist URLs to search channels, browse categories, and stream live television.
-- **Quality & Resolution Selection**: Choose preferred stream resolutions (`1080p`, `720p`, `480p`) directly from the details screen.
-- **Hardware Accelerated Playback**: Plays directly in your preferred local media player with automatic authentication and cookie forwarding.
-- **Multi Segment Downloader**: Download individual episodes or full seasons concurrently with HTTP range pause and resume support.
-- **Automatic Subtitles**: Searches and synchronizes subtitles in your preferred language automatically.
-- **Interactive Terminal UI**: Full keyboard and mouse support with vim navigation and command auto suggestions.
-- **Visual Posters & Themes**: Renders cover art directly in your terminal, with 9 built-in themes and automatic light and dark detection.
-- **Library & Progress Tracking**: Star favorites, track watch history, and resume playback where you left off.
-- **Cross Platform & Private**: Runs natively on macOS, Linux, Windows, and Android (Termux) with zero telemetry or data collection.
-
-## Prerequisites
-
-### Supported Media Players
-
-Requires at least one supported media player installed on your system:
-
-- **Desktop (macOS, Linux, Windows):** [mpv](https://mpv.io/), [VLC](https://www.videolan.org/), or [IINA](https://iina.io/) *(macOS)*.
-- **Android (Termux):** Any external video player ([VLC](https://play.google.com/store/apps/details?id=org.videolan.vlc), Just Player, or MX Player).
-
-### Terminal Graphics (Posters)
-
-Poster rendering automatically adapts to your terminal environment:
-
-- **Graphics-capable terminals:** Displays high-resolution movie and series posters natively.
-- **Standard terminals:** Displays clean, structured text placeholders automatically.
-
-### Optional Dependencies
-
-- **`yt-dlp` & `ffmpeg`:** Required only when downloading DASH streams from the MovieBox provider. All other providers download directly through the built-in HTTP engine.
-## Installation
-
-### macOS and Linux
-
-Open Terminal and run:
-```bash
-curl -fsSL https://raw.githubusercontent.com/mesamirh/MovieBox-Tui/main/install.sh | bash
-```
-
-Or via Homebrew (macOS):
-```bash
-brew tap mesamirh/moviebox-tui https://github.com/mesamirh/MovieBox-Tui
-brew install moviebox-tui
-```
-> [!NOTE]
-> If Homebrew prompts for tap verification on initial install, run `brew trust mesamirh/moviebox-tui`.
-
-### Windows
-
-Via Scoop:
-```powershell
-scoop bucket add moviebox https://github.com/mesamirh/MovieBox-Tui
-scoop install moviebox-tui
-```
-
-Or automated PowerShell script:
-```powershell
-irm https://raw.githubusercontent.com/mesamirh/MovieBox-Tui/main/install.ps1 | iex
-```
-
-### Android (Termux)
-
-Open Termux and run:
-```bash
-pkg update && pkg install -y curl tar termux-tools termux-am
-curl -fsSL https://raw.githubusercontent.com/mesamirh/MovieBox-Tui/main/install.sh | bash
-termux-setup-storage
-```
-> [!IMPORTANT]
-> Video playback on Android launches through your installed external media player (such as VLC, Just Player, or MX Player).
-<details>
-<summary><b>Cargo and Source Build</b></summary>
-
-From crates.io:
-```bash
-cargo install moviebox-tui --locked
-```
-
-From source:
-```bash
-git clone https://github.com/mesamirh/MovieBox-Tui.git
-cd MovieBox-Tui
-cargo build --release --locked
-```
-
-</details>
-
-<details>
-<summary><b>Verify Release Integrity</b></summary>
+Requires a Rust toolchain ([rustup](https://rustup.rs/) or your package manager's `rust`).
 
 ```bash
-sha256sum -c SHA256SUMS --ignore-missing
-gh attestation verify <archive-file> -R mesamirh/MovieBox-Tui
+git clone https://github.com/sufiyan-sabeel/MovieZen-TUI.git
+cd MovieZen-TUI
+cargo build --release
+./target/release/moviezen-tui
 ```
 
-</details>
-<details>
-<summary><b>Uninstallation</b></summary>
-
-#### Automated Installer (macOS, Linux, Windows, Android)
-
-Simply re-run your original install command (`curl ... | bash` or `irm ... | iex`). When MovieBox-TUI is already installed, the installer automatically detects it and displays an interactive menu:
-
-```text
-MovieBox-TUI is already installed.
-What would you like to do?
-  1) Reinstall / Update to latest version
-  2) Uninstall
-  3) Cancel
-```
-
-Enter `2` to completely remove MovieBox-TUI.
-
-#### Package Managers
+On Termux (Android):
 
 ```bash
-brew uninstall moviebox-tui     # Homebrew (macOS)
-scoop uninstall moviebox-tui    # Scoop (Windows)
-cargo uninstall moviebox-tui    # Cargo
+pkg update && pkg upgrade
+pkg install rust git
+git clone https://github.com/sufiyan-sabeel/MovieZen-TUI.git
+cd MovieZen-TUI
+cargo build --release
+./target/release/moviezen-tui
 ```
-
-</details>
-
-## Quick Start
-
-```bash
-moviebox-tui
-```
-
-- Type any title to search, press `Enter` to play.
-- Press `?` inside the TUI for shortcuts, or type `/settings` for preferences.
 
 ## Documentation
 
-Comprehensive guides and architectural references are available at [**mesamirh.github.io/MovieBox-Tui**](https://mesamirh.github.io/MovieBox-Tui/) or in the [`docs/`](docs/) directory:
-
-| Guide | Description |
-| :--- | :--- |
-| [Keyboard & Controls](docs/controls.md) | Keybindings, vim navigation, search, and shortcuts |
-| [Configuration](docs/config.md) | Settings, theme customization, and configuration options |
-| [Content Providers](docs/providers.md) | Native scrapers (MovieBox, Dramachi, BDIX) and stream extractors |
-| [Stremio Addons](docs/addons-mode.md) | Community addon installation, manifest URLs, and stream resolution |
-| [Hardware Players](docs/players.md) | Player detection, launch options, and hardware acceleration |
-| [Live TV & IPTV](docs/tv-mode.md) | M3U playlist import, channel search, and live streaming |
-| [Batch Downloads](docs/downloads.md) | Multi segment HTTP range downloads with pause and resume |
-
-## Contributing
-
-Contributions are welcome. Review [CONTRIBUTING.md](CONTRIBUTING.md) before submitting pull requests.
-
-Report bugs or submit feature requests through [GitHub Issues](https://github.com/mesamirh/MovieBox-Tui/issues).
-
-<details>
-<summary><b>Optional Support</b></summary>
-<div id="optional-support" tabindex="-1"></div>
-
-If you would like to support ongoing development directly:
-
-| Network / Asset | Address |
-| :--- | :--- |
-| **USDT (TRC20)** | `TL4yW73qmbKZpBWwbEFgjBpwVkPDFTkJgV` |
-| **Bitcoin (BTC)** | `3MEAtqtRWrQBhnaMi3Zuf5nt2efNUS2LUQ` |
-| **Ethereum / EVM** | `0x7ea20d5fa29d87f33195f5a3b211ff94038d794c` |
-| **Solana (SOL)** | `6ctm5WFv73MNywoCKAz3xK72yizSspHa72rFNygooU6` |
-
-</details>
-
-## Privacy
-
-MovieBox-TUI contains zero telemetry, analytics, or user tracking. All search history, bookmarks, and configuration files remain strictly on your local filesystem.
-
-## License
-
-Licensed under either [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE).
+- Full usage guide: **this README is being rewritten** — a complete installation, player
+  setup, themes, diagnostics, and troubleshooting guide will land here.
+- Extended docs live in [`docs/`](docs/).
 
 ## Disclaimer
 
-This project does not host or store any media. It is an independent client for playing publicly available streams. Users are responsible for complying with the laws of their country.
+MovieZen-TUI only plays streams it can legitimately access through its configured providers.
+It contains no telemetry, no tracking, and no DRM/authentication/paywall bypass.

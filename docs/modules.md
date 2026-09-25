@@ -1,6 +1,6 @@
 # Modules
 
-The crate (`moviebox_tui`) is split into top-level modules and, inside `tui`, an `app`
+The crate (`moviezen_tui`) is split into top-level modules and, inside `tui`, an `app`
 directory that holds the application object. Below is the full tree with each module's
 responsibility.
 

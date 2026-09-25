@@ -74,8 +74,18 @@ pub struct FavoritesManager {
 
 impl FavoritesManager {
     pub fn new() -> Self {
-        match Self::favorites_file_path() {
-            Some(path) => Self::load_from_path(&path),
+        let resolved = Self::favorites_file_path().and_then(|path| {
+            crate::config::resolve_readable(Some(path), crate::config::legacy_favorites_path())
+        });
+        match resolved {
+            Some((source, migrate)) => {
+                let manager = Self::load_from_path(&source);
+                if migrate {
+                    log::info!("migrating legacy MovieBox-Tui favorites to MovieZen-TUI paths");
+                    manager.save();
+                }
+                manager
+            }
             None => Self::default(),
         }
     }

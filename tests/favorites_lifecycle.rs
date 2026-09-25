@@ -1,8 +1,8 @@
-use moviebox_tui::favorites::FavoriteItem;
-use moviebox_tui::providers::models::ProviderKind;
-use moviebox_tui::tui::action::Action;
-use moviebox_tui::tui::app::App;
-use moviebox_tui::tui::state::Screen;
+use moviezen_tui::favorites::FavoriteItem;
+use moviezen_tui::providers::models::ProviderKind;
+use moviezen_tui::tui::action::Action;
+use moviezen_tui::tui::app::App;
+use moviezen_tui::tui::state::Screen;
 
 #[allow(clippy::too_many_arguments)]
 fn dummy_favorite(
@@ -26,9 +26,9 @@ fn dummy_favorite(
 
 #[test]
 fn test_favorites_path_is_outside_clear_cache_scope() {
-    let favorites_path = moviebox_tui::config::favorites_path().expect("favorites path");
-    let cache_dir = moviebox_tui::config::cache_dir();
-    let data_dir = moviebox_tui::config::data_dir().expect("data dir");
+    let favorites_path = moviezen_tui::config::favorites_path().expect("favorites path");
+    let cache_dir = moviezen_tui::config::cache_dir();
+    let data_dir = moviezen_tui::config::data_dir().expect("data dir");
     let iptv_cache = data_dir.join("iptv_cache");
 
     assert!(!favorites_path.starts_with(&cache_dir));
@@ -169,7 +169,7 @@ async fn test_toggle_favorite_action_on_home_selected_result() {
     app.state_mut().favorites.clear();
 
     app.state_mut().active_screen = Screen::Home;
-    app.state_mut().search_results = vec![moviebox_tui::tui::state::SearchResult {
+    app.state_mut().search_results = vec![moviezen_tui::tui::state::SearchResult {
         id: "mb_toggle".to_string(),
         title: "Interstellar".to_string(),
         stype: 1,

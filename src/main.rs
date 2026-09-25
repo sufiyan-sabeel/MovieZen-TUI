@@ -1,4 +1,4 @@
-use moviebox_tui::tui::app::App;
+use moviezen_tui::tui::app::App;
 
 #[cfg(not(target_os = "android"))]
 #[global_allocator]
@@ -23,15 +23,20 @@ fn purge_stale_subtitles() {
     tokio::task::spawn_blocking(|| {
         let max_age = 24 * 60 * 60;
         let mut dirs = vec![
-            moviebox_tui::service::resolve_subtitle_dir(),
-            std::env::temp_dir().join("moviebox-tui/subs"),
+            moviezen_tui::service::resolve_subtitle_dir(),
+            std::env::temp_dir().join("moviezen-tui/subs"),
         ];
-        if moviebox_tui::updater::artifact::is_termux_environment()
+        if moviezen_tui::updater::artifact::is_termux_environment()
             && let Some(home) = dirs::home_dir()
         {
-            let android_storage = home.join("storage/downloads/moviebox_subs");
+            let android_storage = home.join("storage/downloads/moviezen_subs");
             if home.join("storage/downloads").exists() {
                 dirs.push(android_storage);
+            }
+            // Also purge legacy upstream download dirs so stale files age out.
+            let legacy_storage = home.join("storage/downloads/moviebox_subs");
+            if legacy_storage.exists() {
+                dirs.push(legacy_storage);
             }
         }
 
@@ -56,7 +61,7 @@ fn purge_stale_subtitles() {
 fn purge_stale_update_artifacts() {
     tokio::task::spawn_blocking(|| {
         if let Ok(current_exe) = std::env::current_exe() {
-            moviebox_tui::updater::apply::cleanup_stale_update_artifacts(&current_exe);
+            moviezen_tui::updater::apply::cleanup_stale_update_artifacts(&current_exe);
         }
     });
 }
@@ -79,46 +84,48 @@ async fn main() -> std::io::Result<()> {
         let sub_url = args.get(pos + 3).cloned().filter(|s| !s.is_empty());
         let headers: Vec<(String, String)> =
             serde_json::from_str(&headers_json).unwrap_or_default();
-        moviebox_tui::proxy::run_sidecar(target_url, headers, sub_url).await;
+        moviezen_tui::proxy::run_sidecar(target_url, headers, sub_url).await;
         return Ok(());
     }
     if args.iter().any(|arg| arg == "--help" || arg == "-h") {
-        println!("moviebox-tui {}", env!("CARGO_PKG_VERSION"));
-        println!("A terminal client for finding and streaming movies, TV shows, and anime.\n");
+        println!("moviezen-tui {}", env!("CARGO_PKG_VERSION"));
+        println!("MovieZen-TUI - terminal media experience for movies, TV shows, and anime.\n");
         println!("USAGE:");
-        println!("    moviebox-tui [OPTIONS]\n");
+        println!("    moviezen-tui [OPTIONS]\n");
         println!("OPTIONS:");
         println!("    -h, --help           Print help information");
         println!("    -v, -V, --version    Print version information\n");
         println!("ENVIRONMENT VARIABLES:");
-        println!("    MOVIEBOX_LOG            Log level (off, error, warn, info, debug, trace)");
-        println!("    MOVIEBOX_THEME          Theme name (e.g. catppuccin, dracula, nord, etc.)");
-        println!("    MOVIEBOX_PLAYER         Preferred player (mpv, iina, vlc, android)");
-        println!("    MOVIEBOX_MPV_PATH       Custom mpv binary path");
-        println!("    MOVIEBOX_VLC_PATH       Custom vlc binary path");
-        println!("    MOVIEBOX_IINA_PATH      Custom iina-cli binary path");
-        println!("    MOVIEBOX_FOURKHDHUB_URL Custom 4KHDHub base URL");
-        println!("    MOVIEBOX_NO_IMAGE       Disable poster image queries (1/true)");
-        println!(
-            "    MOVIEBOX_IMAGE_PROTOCOL Force graphics protocol (kitty, sixel, iterm2, none)"
-        );
-        println!("    MOVIEBOX_CELL_SIZE      Override terminal cell size as WxH (e.g. 10x20)");
+        println!("    MOVIEZEN_LOG              Log level (off, error, warn, info, debug, trace)");
+        println!("    MOVIEZEN_THEME            Theme name (e.g. mocha, cinema, ocean, etc.)");
+        println!("    MOVIEZEN_PLAYER           Preferred player (auto, mpv, iina, vlc, android)");
+        println!("    MOVIEZEN_MPV_PATH         Custom mpv binary path");
+        println!("    MOVIEZEN_VLC_PATH         Custom vlc binary path");
+        println!("    MOVIEZEN_IINA_PATH        Custom iina-cli binary path");
+        println!("    MOVIEZEN_FOURKHDHUB_URL   Custom 4KHDHub base URL");
+        println!("    MOVIEZEN_NO_IMAGE         Disable poster image queries (1/true)");
+        println!("    MOVIEZEN_IMAGE_PROTOCOL   Force graphics protocol (kitty, sixel, iterm2, none)");
+        println!("    MOVIEZEN_CELL_SIZE        Override terminal cell size as WxH (e.g. 10x20)");
+        println!("    MOVIEZEN_IMAGE_CACHE      Override poster/image cache directory");
+        println!("    MOVIEZEN_IMAGE_CACHE_SIZE Poster/image cache budget in MB (default 64)");
+        println!();
+        println!("Legacy MOVIEBOX_* variables are still accepted as aliases for these.");
         return Ok(());
     }
     if args
         .iter()
         .any(|arg| arg == "--version" || arg == "-v" || arg == "-V")
     {
-        println!("moviebox-tui {}", env!("CARGO_PKG_VERSION"));
+        println!("moviezen-tui {}", env!("CARGO_PKG_VERSION"));
         return Ok(());
     }
 
-    moviebox_tui::logging::init();
+    moviezen_tui::logging::init();
 
     std::panic::set_hook(Box::new(|info| {
         let backtrace = std::backtrace::Backtrace::capture();
         log::error!("panic: {info}\nbacktrace:\n{backtrace}");
-        moviebox_tui::logging::flush();
+        moviezen_tui::logging::flush();
         restore_terminal();
         eprintln!("{info}\n{backtrace}");
     }));
@@ -135,7 +142,7 @@ async fn main() -> std::io::Result<()> {
         crossterm::event::EnableMouseCapture,
         crossterm::event::EnableFocusChange
     )?;
-    if !moviebox_tui::updater::artifact::is_termux_environment() {
+    if !moviezen_tui::updater::artifact::is_termux_environment() {
         let _ = crossterm::execute!(
             std::io::stdout(),
             crossterm::event::PushKeyboardEnhancementFlags(
@@ -145,7 +152,7 @@ async fn main() -> std::io::Result<()> {
         );
     }
 
-    moviebox_tui::cache::clean_old_cache_background();
+    moviezen_tui::cache::clean_old_cache_background();
     purge_stale_subtitles();
     purge_stale_update_artifacts();
 

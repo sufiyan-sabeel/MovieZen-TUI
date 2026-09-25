@@ -53,31 +53,44 @@ impl Default for Config {
     }
 }
 
-pub const APP_NAME: &str = "moviebox-tui";
+pub const APP_NAME: &str = "moviezen-tui";
+/// Pre-fork directory name. Used only to migrate user config/history from
+/// an upstream MovieBox-Tui installation; never used for new files.
+pub const LEGACY_APP_NAME: &str = "moviebox-tui";
+
+/// Returns the value of the first environment variable in `names` that is set.
+/// Used to prefer `MOVIEZEN_*` names while accepting legacy `MOVIEBOX_*` aliases.
+pub fn env_var(names: &[&str]) -> Option<String> {
+    names.iter().find_map(|name| std::env::var(name).ok())
+}
 
 pub fn config_dir() -> Option<PathBuf> {
-    if let Ok(dir) = std::env::var("MOVIEBOX_CONFIG_DIR") {
+    if let Some(dir) = env_var(&["MOVIEZEN_CONFIG_DIR", "MOVIEBOX_CONFIG_DIR"]) {
         return Some(PathBuf::from(dir));
     }
+    config_dir_for(APP_NAME)
+}
+
+fn config_dir_for(app: &str) -> Option<PathBuf> {
     if let Some(dir) = dirs::config_dir() {
-        return Some(dir.join(APP_NAME));
+        return Some(dir.join(app));
     }
     if let Ok(xdg) = std::env::var("XDG_CONFIG_HOME") {
         let p = PathBuf::from(xdg);
         if !p.as_os_str().is_empty() {
-            return Some(p.join(APP_NAME));
+            return Some(p.join(app));
         }
     }
     if let Ok(prefix) = std::env::var("PREFIX") {
-        let p = PathBuf::from(prefix).join("etc").join(APP_NAME);
+        let p = PathBuf::from(prefix).join("etc").join(app);
         if p.exists() {
             return Some(p);
         }
     }
-    if let Some(dir) = dirs::home_dir().map(|h| h.join(".config").join(APP_NAME)) {
+    if let Some(dir) = dirs::home_dir().map(|h| h.join(".config").join(app)) {
         return Some(dir);
     }
-    let fallback = std::env::temp_dir().join(APP_NAME).join("config");
+    let fallback = std::env::temp_dir().join(app).join("config");
     log::warn!(
         "unable to locate user config directory, falling back to {}",
         fallback.display()
@@ -85,29 +98,38 @@ pub fn config_dir() -> Option<PathBuf> {
     Some(fallback)
 }
 
+/// Old pre-fork config directory, if it exists on this system.
+pub fn legacy_config_dir() -> Option<PathBuf> {
+    config_dir_for(LEGACY_APP_NAME).filter(|dir| dir.exists())
+}
+
 pub fn data_dir() -> Option<PathBuf> {
-    if let Ok(dir) = std::env::var("MOVIEBOX_DATA_DIR") {
+    if let Some(dir) = env_var(&["MOVIEZEN_DATA_DIR", "MOVIEBOX_DATA_DIR"]) {
         return Some(PathBuf::from(dir));
     }
+    data_dir_for(APP_NAME)
+}
+
+fn data_dir_for(app: &str) -> Option<PathBuf> {
     if let Some(dir) = dirs::data_dir() {
-        return Some(dir.join(APP_NAME));
+        return Some(dir.join(app));
     }
     if let Ok(xdg) = std::env::var("XDG_DATA_HOME") {
         let p = PathBuf::from(xdg);
         if !p.as_os_str().is_empty() {
-            return Some(p.join(APP_NAME));
+            return Some(p.join(app));
         }
     }
     if let Ok(prefix) = std::env::var("PREFIX") {
-        let p = PathBuf::from(prefix).join("var").join("lib").join(APP_NAME);
+        let p = PathBuf::from(prefix).join("var").join("lib").join(app);
         if p.exists() {
             return Some(p);
         }
     }
-    if let Some(dir) = dirs::home_dir().map(|h| h.join(".local").join("share").join(APP_NAME)) {
+    if let Some(dir) = dirs::home_dir().map(|h| h.join(".local").join("share").join(app)) {
         return Some(dir);
     }
-    let fallback = std::env::temp_dir().join(APP_NAME).join("data");
+    let fallback = std::env::temp_dir().join(app).join("data");
     log::warn!(
         "unable to locate user data directory, falling back to {}",
         fallback.display()
@@ -115,8 +137,13 @@ pub fn data_dir() -> Option<PathBuf> {
     Some(fallback)
 }
 
+/// Old pre-fork data directory (watch history, favorites), if present.
+pub fn legacy_data_dir() -> Option<PathBuf> {
+    data_dir_for(LEGACY_APP_NAME).filter(|dir| dir.exists())
+}
+
 pub fn cache_dir() -> PathBuf {
-    if let Ok(dir) = std::env::var("MOVIEBOX_CACHE_DIR") {
+    if let Some(dir) = env_var(&["MOVIEZEN_CACHE_DIR", "MOVIEBOX_CACHE_DIR"]) {
         return PathBuf::from(dir);
     }
     if let Some(dir) = dirs::cache_dir() {
@@ -182,12 +209,55 @@ pub fn favorites_path() -> Option<PathBuf> {
     data_dir().map(|dir| dir.join("favorites.json"))
 }
 
+pub fn legacy_config_path() -> Option<PathBuf> {
+    legacy_config_dir().map(|dir| dir.join("config.json"))
+}
+
+pub fn legacy_addons_path() -> Option<PathBuf> {
+    legacy_config_dir().map(|dir| dir.join("addons_config.json"))
+}
+
+pub fn legacy_tv_path() -> Option<PathBuf> {
+    legacy_config_dir().map(|dir| dir.join("tv_config.json"))
+}
+
+pub fn legacy_history_path() -> Option<PathBuf> {
+    legacy_data_dir().map(|dir| dir.join("history.json"))
+}
+
+pub fn legacy_favorites_path() -> Option<PathBuf> {
+    legacy_data_dir().map(|dir| dir.join("favorites.json"))
+}
+
+/// Pick which file to read: the new path when present, otherwise a legacy
+/// pre-fork file. Returns `(path, needs_migration)`; `needs_migration` is true
+/// when the legacy file was chosen and should be copied to the new location.
+pub(crate) fn resolve_readable(
+    new_path: Option<PathBuf>,
+    legacy_path: Option<PathBuf>,
+) -> Option<(PathBuf, bool)> {
+    if let Some(path) = &new_path
+        && path.exists()
+    {
+        return Some((path.clone(), false));
+    }
+    if let Some(path) = legacy_path
+        && path.exists()
+    {
+        return Some((path, true));
+    }
+    new_path.map(|path| (path, false))
+}
+
 pub fn load() -> Config {
     let Some(path) = config_path() else {
         return Config::default();
     };
-    if path.exists() {
-        if let Ok(content) = std::fs::read_to_string(&path) {
+    let Some((source, migrate)) = resolve_readable(Some(path), legacy_config_path()) else {
+        return Config::default();
+    };
+    if source.exists() {
+        if let Ok(content) = std::fs::read_to_string(&source) {
             let mut val: serde_json::Value = match serde_json::from_str(&content) {
                 Ok(v) => v,
                 Err(e) => {
@@ -207,6 +277,10 @@ pub fn load() -> Config {
                     config.bdix_circleftp_enabled = true;
                     config.bdix_dhakaflix_enabled = true;
                 }
+                if migrate {
+                    log::info!("migrating legacy MovieBox-Tui config to MovieZen-TUI paths");
+                    save(&config);
+                }
                 return config;
             }
         }
@@ -214,13 +288,13 @@ pub fn load() -> Config {
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
             .as_secs();
-        let corrupt_path = path.with_extension(format!("corrupt.{stamp}"));
+        let corrupt_path = source.with_extension(format!("corrupt.{stamp}"));
         log::error!(
             "failed to parse config from {}, rotating to {}",
-            crate::logging::sanitize_path(&path),
+            crate::logging::sanitize_path(&source),
             crate::logging::sanitize_path(&corrupt_path)
         );
-        let _ = std::fs::rename(&path, corrupt_path);
+        let _ = std::fs::rename(&source, corrupt_path);
     }
     Config::default()
 }
@@ -240,9 +314,11 @@ pub fn save(config: &Config) {
 }
 
 pub fn load_addons() -> Vec<InstalledAddon> {
-    let mut list = if let Some(path) = addons_path() {
-        if path.exists() {
-            match std::fs::read_to_string(&path) {
+    let resolved = resolve_readable(addons_path(), legacy_addons_path());
+    let migrate = resolved.as_ref().is_some_and(|(_, needs)| *needs);
+    let mut list = if let Some((source, _)) = resolved {
+        if source.exists() {
+            match std::fs::read_to_string(&source) {
                 Ok(content) => match serde_json::from_str::<Vec<InstalledAddon>>(&content) {
                     Ok(parsed) => parsed,
                     Err(e) => {
@@ -250,20 +326,20 @@ pub fn load_addons() -> Vec<InstalledAddon> {
                             .duration_since(std::time::UNIX_EPOCH)
                             .unwrap_or_default()
                             .as_secs();
-                        let corrupt_path = path.with_extension(format!("corrupt.{stamp}"));
+                        let corrupt_path = source.with_extension(format!("corrupt.{stamp}"));
                         log::error!(
                             "failed to parse addons config from {} ({e}), rotating to {}",
-                            crate::logging::sanitize_path(&path),
+                            crate::logging::sanitize_path(&source),
                             crate::logging::sanitize_path(&corrupt_path)
                         );
-                        let _ = std::fs::rename(&path, corrupt_path);
+                        let _ = std::fs::rename(&source, corrupt_path);
                         Vec::new()
                     }
                 },
                 Err(e) => {
                     log::warn!(
                         "failed to read addons config from {}: {e}",
-                        crate::logging::sanitize_path(&path)
+                        crate::logging::sanitize_path(&source)
                     );
                     Vec::new()
                 }
@@ -274,6 +350,23 @@ pub fn load_addons() -> Vec<InstalledAddon> {
     } else {
         Vec::new()
     };
+
+    if !list.iter().any(|a| a.is_core()) {
+        list.insert(0, InstalledAddon::cinemeta_default());
+        save_addons(&list);
+    } else {
+        for a in &mut list {
+            if a.is_core() {
+                a.enabled = true;
+            }
+        }
+        if migrate {
+            log::info!("migrating legacy MovieBox-Tui addons config to MovieZen-TUI paths");
+            save_addons(&list);
+        }
+    }
+    list
+}
 
     if !list.iter().any(|a| a.is_core()) {
         list.insert(0, InstalledAddon::cinemeta_default());

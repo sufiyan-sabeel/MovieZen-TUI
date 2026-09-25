@@ -1,9 +1,9 @@
-use moviebox_tui::models::MediaType;
-use moviebox_tui::providers::addons::adapter::{
+use moviezen_tui::models::MediaType;
+use moviezen_tui::providers::addons::adapter::{
     meta_detail_to_media_details, parse_audio_tracks, parse_codec, parse_quality,
     parse_season_episode, parse_size_bytes_from_text, stream_item_to_release,
 };
-use moviebox_tui::providers::addons::models::{
+use moviezen_tui::providers::addons::models::{
     AddonManifest, InstalledAddon, MetaDetail, StreamBehaviorHints, StreamItem,
 };
 use std::collections::HashMap;
@@ -301,24 +301,24 @@ fn test_installed_addon_cinemeta_protection() {
 
 #[tokio::test]
 async fn test_invalid_addon_manifest_url_shows_actionable_error_and_preserves_state() {
-    let client = moviebox_tui::providers::addons::client::AddonClient::new();
+    let client = moviezen_tui::providers::addons::client::AddonClient::new();
     let err = client
         .fetch_manifest("https://invalid-nonexistent-domain.test/manifest.json")
         .await
         .unwrap_err();
     assert!(err.contains("Failed to reach manifest") || err.contains("Manifest returned HTTP"));
 
-    let mut app = moviebox_tui::tui::app::App::new();
+    let mut app = moviezen_tui::tui::app::App::new();
     let initial_addons_count = app.state().installed_addons.len();
 
-    app.handle_action(moviebox_tui::tui::action::Action::SetStatus(format!(
+    app.handle_action(moviezen_tui::tui::action::Action::SetStatus(format!(
         "Error: Addon install failed: {err}"
     )))
     .await;
 
     assert!(!app.state().notifications.is_empty());
     let notif = app.state().notifications.back().unwrap();
-    assert_eq!(notif.kind, moviebox_tui::models::NotificationKind::Error);
+    assert_eq!(notif.kind, moviezen_tui::models::NotificationKind::Error);
     assert_eq!(app.state().installed_addons.len(), initial_addons_count);
 }
 
@@ -396,7 +396,7 @@ fn test_addon_mixed_stream_filtering_and_magnet_rejection() {
 
 #[tokio::test]
 async fn test_addon_enable_disable_and_removal_lifecycle() {
-    let mut app = moviebox_tui::tui::app::App::new();
+    let mut app = moviezen_tui::tui::app::App::new();
     let initial_count = app.state().installed_addons.len();
 
     let custom_manifest = serde_json::json!({
@@ -416,15 +416,15 @@ async fn test_addon_enable_disable_and_removal_lifecycle() {
     assert_eq!(app.state().installed_addons.len(), initial_count + 1);
 
     let idx = initial_count;
-    app.handle_action(moviebox_tui::tui::action::Action::AddonToggleEnabled(idx))
+    app.handle_action(moviezen_tui::tui::action::Action::AddonToggleEnabled(idx))
         .await;
     assert!(!app.state().installed_addons[idx].enabled);
 
-    app.handle_action(moviebox_tui::tui::action::Action::AddonToggleEnabled(idx))
+    app.handle_action(moviezen_tui::tui::action::Action::AddonToggleEnabled(idx))
         .await;
     assert!(app.state().installed_addons[idx].enabled);
 
-    app.handle_action(moviebox_tui::tui::action::Action::AddonRemove(idx))
+    app.handle_action(moviezen_tui::tui::action::Action::AddonRemove(idx))
         .await;
     assert_eq!(app.state().installed_addons.len(), initial_count);
 }
